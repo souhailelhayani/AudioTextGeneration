@@ -25,6 +25,5 @@ public class EntryPoint {
         app.MapControllers();
         
         app.Run();
-
-        }
     }
+}
