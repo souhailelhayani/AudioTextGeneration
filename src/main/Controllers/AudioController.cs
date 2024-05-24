@@ -53,12 +53,12 @@ namespace AudioTextGeneration.src.main.Controllers
             return Ok(new { FilePath = filePath });
         }
 
-        // [HttpPost("test")]
-        // public async Task<String> Test() 
-        // {
-        //     await _storageService.TestStore("audios");
+        [HttpPost("test")]
+        public async Task<String> Test() 
+        {
+            await _storageService.TestStore("audios");
 
-        //     return "testing";
-        // }
+            return "testing";
+        }
     }
 }
