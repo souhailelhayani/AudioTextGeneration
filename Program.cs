@@ -4,8 +4,8 @@ using Azure.Identity;
 using Azure.Storage;
 
 public class EntryPoint {
-    private static readonly string _storageAccountName = "testaccountalexsys1";
-    private static readonly string key = "iINFWnsN11+WV5xHUO9c34On7/aII9PQPgvmKPXLdvCMZvXr5Zh9P6XRY3N3vQ2xLabeSgMplK+v+ASt0Pm8Ng==";
+    private static readonly string _storageAccountName = "devstoreaccount1";
+    private static readonly string key = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
 
     public static void Main(String[] args) {
