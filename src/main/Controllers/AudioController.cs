@@ -1,3 +1,4 @@
+using AudioTextGeneration.src.main.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AudioTextGeneration.src.main.Controllers
@@ -6,42 +7,58 @@ namespace AudioTextGeneration.src.main.Controllers
     [Route("Audio")]
     public class AudioController : Controller
     {
-        private readonly string storagePath = Path.Combine(Directory.GetCurrentDirectory(), @"assets\outputs");
+        private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), @"assets\outputs");
+        private TranscriptionService _transcriptionService;
+        private StorageService _storageService;
+
+        public AudioController(TranscriptionService transcriptionService, StorageService storageService)
+        {   
+            _transcriptionService = transcriptionService;
+            _storageService = storageService;
+        }
 
         [HttpPost("Upload")]
         public  async Task<IActionResult> UploadAudio([FromForm] IFormFile audioFile)
         {
             //TODO optimize async later
+            //TODO security ??
 
             if (audioFile == null || audioFile.Length == 0)
             {
                 return BadRequest("No file uploaded.");
             }
-
-            // Ensure the storage directory exists
-            if (!Directory.Exists(storagePath))
+            
+            if(Path.GetExtension(audioFile.FileName).ToLowerInvariant() != ".wav") 
             {
-                Directory.CreateDirectory(storagePath);
+                return BadRequest("Audio file not in wav format");
             }
 
-            string filePath = Path.Combine(storagePath, audioFile.FileName);
-            Console.WriteLine($"file path is {filePath}");
-            Console.WriteLine("file size before copying: "+audioFile.Length);
+            // Ensure the storage directory exists
+            if (!Directory.Exists(_storagePath))
+            {
+                Directory.CreateDirectory(_storagePath);
+            }
+
+            string filePath = Path.Combine(_storagePath, audioFile.FileName);
 
             using (var stream = System.IO.File.Create(filePath))
             {
                 await audioFile.CopyToAsync(stream);
-                Console.WriteLine("reached here in async");
             }
-            Console.WriteLine("reached here in return");
 
-            FileInfo fi = new FileInfo(filePath);
-            Console.WriteLine("file size after copying to stream: " + fi.Length);
+            //save file in blob storage
+            await _storageService.Store("audios", audioFile);
 
-            //TODO convert file to wav file
-            
 
             return Ok(new { FilePath = filePath });
         }
+
+        // [HttpPost("test")]
+        // public async Task<String> Test() 
+        // {
+        //     await _storageService.TestStore("audios");
+
+        //     return "testing";
+        // }
     }
 }
