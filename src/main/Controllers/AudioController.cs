@@ -8,6 +8,7 @@ namespace AudioTextGeneration.src.main.Controllers
     public class AudioController : Controller
     {
         private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), @"assets\outputs");
+        private readonly string _audioContainerName = "audios";
         private TranscriptionService _transcriptionService;
         private StorageService _storageService;
 
@@ -18,7 +19,7 @@ namespace AudioTextGeneration.src.main.Controllers
         }
 
         [HttpPost("Upload")]
-        public  async Task<IActionResult> UploadAudio([FromForm] IFormFile audioFile)
+        public async Task<IActionResult> UploadAudioAndTranscribe([FromForm] IFormFile audioFile)
         {
             //TODO optimize async later
             //TODO security ??
@@ -33,30 +34,34 @@ namespace AudioTextGeneration.src.main.Controllers
                 return BadRequest("Audio file not in wav format");
             }
 
+            // copy the file locally
+
             // Ensure the storage directory exists
-            if (!Directory.Exists(_storagePath))
-            {
-                Directory.CreateDirectory(_storagePath);
-            }
+            // if (!Directory.Exists(_storagePath))
+            // {
+            //     Directory.CreateDirectory(_storagePath);
+            // }
 
-            string filePath = Path.Combine(_storagePath, audioFile.FileName);
+            // string filePath = Path.Combine(_storagePath, audioFile.FileName);
+            // using (var stream = System.IO.File.Create(filePath))
+            // {
+            //     await audioFile.CopyToAsync(stream);
+            // }
 
-            using (var stream = System.IO.File.Create(filePath))
-            {
-                await audioFile.CopyToAsync(stream);
-            }
+            //save audio file in blob storage
+            await _storageService.Store(_audioContainerName, audioFile);
 
-            //save file in blob storage
-            await _storageService.Store("audios", audioFile);
+            var audioTranscribingTask = _transcriptionService.TranscribeFromBlob(_audioContainerName, audioFile.FileName);
+            
+            await audioTranscribingTask;
 
-
-            return Ok(new { FilePath = filePath });
+            return Ok("audio uploaded and transcribed successsfully");
         }
 
         [HttpPost("test")]
         public async Task<String> Test() 
         {
-            await _storageService.TestStore("audios");
+            await _storageService.TestStore();
 
             return "testing";
         }

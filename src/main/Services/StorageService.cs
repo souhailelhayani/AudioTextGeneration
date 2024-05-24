@@ -31,11 +31,41 @@ namespace AudioTextGeneration.src.main.Services
             }
         }
 
-        public void Retrieve() {
+        public async Task Store(string containerName, string filePath) 
+        {
+            var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
 
+            if(!await containerClient.ExistsAsync())
+            {
+                containerClient = await _blobServiceClient.CreateBlobContainerAsync(containerName);
+            }
+
+            var blobClient = containerClient.GetBlobClient(Path.GetFileName(filePath));
+            await blobClient.UploadAsync(filePath, true);
         }
 
-        internal async Task TestStore(string v)
+        public async Task Retrieve(string containerName, string blobName, string targetPath) {
+            var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
+
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            // Ensure the directory exists
+            string currentPath = Directory.GetCurrentDirectory();
+            if (!Directory.Exists(Path.Combine(currentPath, targetPath)))
+                Directory.CreateDirectory(Path.Combine(currentPath, targetPath));
+            
+            targetPath = Path.Combine(currentPath, targetPath);
+
+            await blobClient.DownloadToAsync(Path.Combine(targetPath, blobName));
+        }
+
+        public void Clean(string targetPath)
+        {
+            string currentPath = Directory.GetCurrentDirectory();
+            File.Delete(Path.Combine(currentPath, targetPath));
+        }
+
+        public async Task TestStore()
         {
             string containerName = "quickstartblobs" + Guid.NewGuid().ToString();
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
