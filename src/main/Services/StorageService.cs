@@ -33,10 +33,10 @@ namespace AudioTextGeneration.src.main.Services
 
         public async Task Store(string containerName, string blobName, MemoryStream stream) 
         {
-            if(stream.Length == 0) {
-                System.Console.WriteLine("length of stream 0, skipped");
-                return;
-            }
+            // if(stream.Length == 0) {
+            //     System.Console.WriteLine("length of stream 0, skipped");
+            //     return;
+            // }
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
 
