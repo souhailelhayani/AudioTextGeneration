@@ -31,8 +31,13 @@ namespace AudioTextGeneration.src.main.Services
             }
         }
 
-        public async Task Store(string containerName, string filePath) 
+        public async Task Store(string containerName, string blobName, MemoryStream stream) 
         {
+            if(stream.Length == 0) {
+                System.Console.WriteLine("length of stream 0, skipped");
+                return;
+            }
+
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
 
             if(!await containerClient.ExistsAsync())
@@ -40,29 +45,17 @@ namespace AudioTextGeneration.src.main.Services
                 containerClient = await _blobServiceClient.CreateBlobContainerAsync(containerName);
             }
 
-            var blobClient = containerClient.GetBlobClient(Path.GetFileName(filePath));
-            await blobClient.UploadAsync(filePath, true);
+            var blobClient = containerClient.GetBlobClient(blobName);
+            await blobClient.UploadAsync(stream, true);
         }
 
-        public async Task Retrieve(string containerName, string blobName, string targetPath) {
+        public async Task Retrieve(string containerName, string blobName, MemoryStream stream) {
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
 
             var blobClient = containerClient.GetBlobClient(blobName);
 
-            // Ensure the directory exists
-            string currentPath = Directory.GetCurrentDirectory();
-            if (!Directory.Exists(Path.Combine(currentPath, targetPath)))
-                Directory.CreateDirectory(Path.Combine(currentPath, targetPath));
-            
-            targetPath = Path.Combine(currentPath, targetPath);
-
-            await blobClient.DownloadToAsync(Path.Combine(targetPath, blobName));
-        }
-
-        public void Clean(string targetPath)
-        {
-            string currentPath = Directory.GetCurrentDirectory();
-            File.Delete(Path.Combine(currentPath, targetPath));
+            await blobClient.DownloadToAsync(stream);
+            stream.Position = 0; // Reset the stream position to the beginning
         }
 
         public async Task TestStore()

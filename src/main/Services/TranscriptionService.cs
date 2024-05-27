@@ -7,8 +7,6 @@ namespace AudioTextGeneration.src.main.Services
     {
         private readonly string _textContainerName = "texts";
 
-        private readonly string _tempPath = @"assets\temp";
-
         private StorageService _storageService;
 
         public TranscriptionService(StorageService storageService)
@@ -19,30 +17,34 @@ namespace AudioTextGeneration.src.main.Services
         public async Task TranscribeFromBlob(string containerName, string blobName) 
         {
             // download the audio file temporarily
-            Task audioRetrieval = _storageService.Retrieve(containerName, blobName, _tempPath);
+            MemoryStream audioStream = new MemoryStream();
+            MemoryStream outputTextStream = new MemoryStream();
+            Task audioRetrieval = _storageService.Retrieve(containerName, blobName, audioStream);
 
-            // file to be transcribed is now in the _tempDownloadPath
-            string audioFilePath = Path.Combine(_tempPath, blobName);
-            string textFilePath = Path.Combine(_tempPath, blobName.Replace(Path.GetExtension(blobName),".txt"));
-
-            // transcribe the file in audioFilePath and write result to textFilePath
+            // transcribe from audioStream and store in outputTextStream
             await audioRetrieval;
-            await Transcribe(audioFilePath, textFilePath);
+            System.Console.WriteLine("audio stream length in bytes: " + audioStream.Length + audioStream.CanRead + audioStream.CanWrite);
+
+            await Transcribe(audioStream, outputTextStream);
+
+            System.Console.WriteLine("text stream length in bytes: " + outputTextStream.Length + outputTextStream.CanRead + outputTextStream.CanWrite);
 
             // store the text file in blob storage
-            Task storeTextInBlob = _storageService.Store(_textContainerName, textFilePath);
-
-            // delete the temp files
-            _storageService.Clean(audioFilePath);
+            Task storeTextInBlob = _storageService.Store(_textContainerName, blobName.Replace(".wav", ".txt"), outputTextStream);
 
             await storeTextInBlob;
-            _storageService.Clean(textFilePath);
+            
+            audioStream.Close();
+            outputTextStream.Close();
         }
 
-        private async Task Transcribe(string audioFilePath, string textFilePath)
+        private async Task Transcribe(MemoryStream audioStream, MemoryStream textStream)
         {
             // TESTING. Write text to the file
             // await File.WriteAllTextAsync(textFilePath, "Hello, World!");
+
+            audioStream.Position = 0; // Reset the stream position to the beginning
+            textStream.Position = 0; // Reset the stream position to the beginning
         }
          
     }
