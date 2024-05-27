@@ -34,20 +34,6 @@ namespace AudioTextGeneration.src.main.Controllers
                 return BadRequest("Audio file not in wav format");
             }
 
-            // copy the file locally
-
-            // Ensure the storage directory exists
-            // if (!Directory.Exists(_storagePath))
-            // {
-            //     Directory.CreateDirectory(_storagePath);
-            // }
-
-            // string filePath = Path.Combine(_storagePath, audioFile.FileName);
-            // using (var stream = System.IO.File.Create(filePath))
-            // {
-            //     await audioFile.CopyToAsync(stream);
-            // }
-
             //save audio file in blob storage
             await _storageService.Store(_audioContainerName, audioFile);
 
