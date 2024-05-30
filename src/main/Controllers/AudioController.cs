@@ -18,12 +18,10 @@ namespace AudioTextGeneration.src.main.Controllers
             _storageService = storageService;
         }
 
+        // Uploads an audio file and performs its transcription. Stores both audio and text files in blob storage
         [HttpPost("Upload")]
         public async Task<IActionResult> UploadAudioAndTranscribe([FromForm] IFormFile audioFile)
         {
-            //TODO optimize async later
-            //TODO security ??
-
             if (audioFile == null || audioFile.Length == 0)
             {
                 return BadRequest("No file uploaded.");
@@ -44,12 +42,12 @@ namespace AudioTextGeneration.src.main.Controllers
             return Ok("audio uploaded and transcribed successsfully");
         }
 
-        [HttpPost("test")]
-        public async Task<String> Test() 
-        {
-            await _storageService.TestStore();
+        // [HttpPost("test")]
+        // public async Task<String> Test() 
+        // {
+        //     await _storageService.TestStore();
 
-            return "testing";
-        }
+        //     return "testing";
+        // }
     }
 }

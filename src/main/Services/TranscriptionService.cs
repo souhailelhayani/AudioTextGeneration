@@ -7,8 +7,8 @@ namespace AudioTextGeneration.src.main.Services
     public class TranscriptionService
     {
         private readonly string _textContainerName = "texts";
-        static string azureKey = "500ea89d15624ecfa1fa16834acfe9fb";
-        static string azureLocation = "francecentral";
+        static string azureKey = "68b2fe0f646e47408eb9589123254428";
+        static string azureLocation = "eastus2";
 
         private StorageService _storageService;
 
@@ -17,9 +17,9 @@ namespace AudioTextGeneration.src.main.Services
             _storageService = storageService;
         }
 
+        // Transcribes audio file from blob with name blobName in container containerName
         public async Task TranscribeFromBlob(string containerName, string blobName) 
         {
-            // download the audio file temporarily
             MemoryStream audioStream = new MemoryStream();
             MemoryStream outputTextStream = new MemoryStream();
             Task audioRetrieval = _storageService.Retrieve(containerName, blobName, audioStream);
@@ -27,9 +27,16 @@ namespace AudioTextGeneration.src.main.Services
             // transcribe from audioStream and store in outputTextStream
             await audioRetrieval;
             System.Console.WriteLine("audio stream length in bytes: " + audioStream.Length);
+            System.Console.WriteLine("start transcription");
+            
+            //temporarily calculate how long transcription takes
+            var watch = System.Diagnostics.Stopwatch.StartNew();
 
-            //TODO maybe remove the headers and metadata from the audioStream array ?? it works now by default
             await Transcribe(audioStream, outputTextStream);
+
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            System.Console.WriteLine($"Transcription done in {elapsedMs} ms");
 
             System.Console.WriteLine("text stream length in bytes: " + outputTextStream.Length);
 
@@ -42,6 +49,7 @@ namespace AudioTextGeneration.src.main.Services
             outputTextStream.Close();
         }
 
+        // Performs the transcription of audio stored in a stream, into a textStream representing the text
         private async Task Transcribe(MemoryStream audioStream, MemoryStream textStream)
         {
             audioStream.Position = 0; // Reset the stream position to the beginning
@@ -52,11 +60,9 @@ namespace AudioTextGeneration.src.main.Services
 
             var (sampleRate, bitsPerSample, channels) = GetWavFileParameters(audioStream);
             var audioFormat = AudioStreamFormat.GetWaveFormatPCM(sampleRate, bitsPerSample, channels);
-            //var audioFormat = AudioStreamFormat.GetWaveFormatPCM(16000, 16, 1); // Adjust as per your audio format
             var audioPushStream = AudioInputStream.CreatePushStream(audioFormat);
 
             //write into the PushAudioInputStream object
-            System.Console.WriteLine("stream size: " + audioStream.Length);
             audioStream.Position = 44; //skip 44 bytes of header
             byte[] buffer = new byte[1024];
             int bytesRead;
@@ -104,24 +110,10 @@ namespace AudioTextGeneration.src.main.Services
 
             await recognizer.StartContinuousRecognitionAsync();
             Task.WaitAny(stopRecognition.Task);
-            await recognizer.StopContinuousRecognitionAsync();
-
-            // Console.WriteLine("Press any key to stop...");
-            // Console.ReadKey();
-            // await recognizer.StopContinuousRecognitionAsync();
-
-            //read the text in console
-            // textStream.Position = 0; // Reset stream position for reading
-            // using (var reader = new StreamReader(textStream, Encoding.UTF8, leaveOpen: true))
-            // {
-            //     string transcriptionText = reader.ReadToEnd();
-            //     Console.WriteLine("Transcription:");
-            //     Console.WriteLine(transcriptionText);
-            // }
-
-            textStream.Position = 0; // Reset stream position for reading   
+            await recognizer.StopContinuousRecognitionAsync(); 
         }
 
+        // Gets the wav format parameters of a .wav audio file
         private static (uint sampleRate, byte bitsPerSample, byte channels) GetWavFileParameters(Stream stream)
         {
             using (var reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true))
