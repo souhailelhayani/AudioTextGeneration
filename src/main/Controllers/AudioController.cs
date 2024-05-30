@@ -7,7 +7,6 @@ namespace AudioTextGeneration.src.main.Controllers
     [Route("Audio")]
     public class AudioController : Controller
     {
-        private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), @"assets\outputs");
         private readonly string _audioContainerName = "audios";
         private TranscriptionService _transcriptionService;
         private StorageService _storageService;
