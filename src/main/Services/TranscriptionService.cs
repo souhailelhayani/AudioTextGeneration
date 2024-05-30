@@ -18,14 +18,12 @@ namespace AudioTextGeneration.src.main.Services
         }
 
         // Transcribes audio file from blob with name blobName in container containerName
-        public async Task TranscribeFromBlob(string containerName, string blobName) 
+        public async Task TranscribeFromBlob(string containerName, string blobName, MemoryStream outputTextStream) 
         {
-            MemoryStream audioStream = new MemoryStream();
-            MemoryStream outputTextStream = new MemoryStream();
-            Task audioRetrieval = _storageService.Retrieve(containerName, blobName, audioStream);
+            var audioStream = new MemoryStream();
+            await _storageService.Retrieve(containerName, blobName, audioStream);
 
             // transcribe from audioStream and store in outputTextStream
-            await audioRetrieval;
             System.Console.WriteLine("audio stream length in bytes: " + audioStream.Length);
             System.Console.WriteLine("start transcription");
             
@@ -41,12 +39,9 @@ namespace AudioTextGeneration.src.main.Services
             System.Console.WriteLine("text stream length in bytes: " + outputTextStream.Length);
 
             // store the text file in blob storage
-            Task storeTextInBlob = _storageService.Store(_textContainerName, blobName.Replace(".wav", ".txt"), outputTextStream);
-
-            await storeTextInBlob;
+            await _storageService.Store(_textContainerName, blobName.Replace(".wav", ".txt"), outputTextStream);
             
             audioStream.Close();
-            outputTextStream.Close();
         }
 
         // Performs the transcription of audio stored in a stream, into a textStream representing the text
@@ -111,6 +106,8 @@ namespace AudioTextGeneration.src.main.Services
             await recognizer.StartContinuousRecognitionAsync();
             Task.WaitAny(stopRecognition.Task);
             await recognizer.StopContinuousRecognitionAsync(); 
+
+            textStream.Position = 0;
         }
 
         // Gets the wav format parameters of a .wav audio file

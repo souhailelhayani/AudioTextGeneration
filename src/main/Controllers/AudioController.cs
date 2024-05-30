@@ -18,6 +18,7 @@ namespace AudioTextGeneration.src.main.Controllers
         }
 
         // Uploads an audio file and performs its transcription. Stores both audio and text files in blob storage
+        // Returns the transcribed text in a text file
         [HttpPost("Upload")]
         public async Task<IActionResult> UploadAudioAndTranscribe([FromForm] IFormFile audioFile)
         {
@@ -33,12 +34,12 @@ namespace AudioTextGeneration.src.main.Controllers
 
             //save audio file in blob storage
             await _storageService.Store(_audioContainerName, audioFile);
-
-            var audioTranscribingTask = _transcriptionService.TranscribeFromBlob(_audioContainerName, audioFile.FileName);
             
-            await audioTranscribingTask;
 
-            return Ok("audio uploaded and transcribed successsfully");
+            var textStream = new MemoryStream();
+            await _transcriptionService.TranscribeFromBlob(_audioContainerName, audioFile.FileName, textStream);
+            return File(textStream, "text/plain", audioFile.FileName.Replace(".wav", ".txt"));
+
         }
 
         // [HttpPost("test")]

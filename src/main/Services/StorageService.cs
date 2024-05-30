@@ -48,6 +48,8 @@ namespace AudioTextGeneration.src.main.Services
 
             var blobClient = containerClient.GetBlobClient(blobName);
             await blobClient.UploadAsync(stream, true);
+
+            stream.Position = 0;
         }
 
         // Retrieves a blob with name blobName from a container with name containerName into a memory stream
@@ -57,6 +59,7 @@ namespace AudioTextGeneration.src.main.Services
             var blobClient = containerClient.GetBlobClient(blobName);
 
             await blobClient.DownloadToAsync(stream);
+            
             stream.Position = 0; // Reset the stream position to the beginning
         }
 
@@ -107,6 +110,6 @@ namespace AudioTextGeneration.src.main.Services
 
     //         Console.WriteLine("Done");
     //     }
-    
+
     }
 }
