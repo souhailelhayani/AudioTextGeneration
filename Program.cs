@@ -1,44 +1,51 @@
-var builder = WebApplication.CreateBuilder(args);
+using AudioTextGeneration.src.main.Services;
+using Microsoft.Extensions.Azure;
+using Azure.Identity;
+using Azure.Storage;
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+public class EntryPoint {
+    private static readonly string _storageAccountName = "devstoreaccount1";
+    private static readonly string key = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
-var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    public static void Main(String[] args) {
+        var builder = WebApplication.CreateBuilder(args);
 
-app.UseHttpsRedirection();
+        // Add services to the container.
+        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+        //Register the services
+        builder.Services.AddScoped<TranscriptionService>();
+        builder.Services.AddScoped<AudioService>();
+        builder.Services.AddScoped<StorageService>();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+        //add azure service clients
+        builder.Services.AddAzureClients(clientBuilder =>
+        {
+            // Register clients for each service
+            clientBuilder.AddBlobServiceClient(new Uri($"http://127.0.0.1:10000/{_storageAccountName}"), new StorageSharedKeyCredential(_storageAccountName, key));
+            //clientBuilder.UseCredential(new DefaultAzureCredential());
+        });
 
-app.Run();
+        //needs to be added to discover the controllers
+        builder.Services.AddControllers();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        var app = builder.Build();
+
+        // Configure the HTTP request pipeline.
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+
+        app.UseHttpsRedirection();
+
+        //need to add this to be able to call the controller methods
+        app.MapControllers();
+        
+        app.Run();
+    }
 }
