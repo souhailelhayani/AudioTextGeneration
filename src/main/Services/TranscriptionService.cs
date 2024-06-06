@@ -47,6 +47,8 @@ namespace AudioTextGeneration.src.main.Services
             textStream.Position = 0; // Reset the stream position to the beginning
 
             var speechConfig = SpeechConfig.FromSubscription(azureKey, azureLocation);
+            speechConfig.RequestWordLevelTimestamps();
+
             //speechConfig.SetProperty(PropertyId.SpeechServiceConnection_AutoDetectSourceLanguages, "fr-FR,ar-EG");
 
             var (sampleRate, bitsPerSample, channels) = GetWavFileParameters(audioStream);
@@ -78,7 +80,17 @@ namespace AudioTextGeneration.src.main.Services
             {
                 if (e.Result.Reason == ResultReason.RecognizedSpeech)
                 {
-                    byte[] textBytes = Encoding.UTF8.GetBytes(e.Result.Text /* + Environment.NewLine*/);
+                    //choose the best result
+                    var results = e.Result.Best();
+                    var bestResult = results.ElementAt(0);
+                    
+                    foreach(var result in results) {
+                        if(result.Confidence > bestResult.Confidence) {
+                            bestResult = result;
+                        }
+                    }
+
+                    byte[] textBytes = Encoding.UTF8.GetBytes(bestResult.Text  + Environment.NewLine);
                     textStream.Write(textBytes, 0, textBytes.Length);
                 }
                 else if (e.Result.Reason == ResultReason.NoMatch)
