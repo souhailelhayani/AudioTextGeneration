@@ -8,6 +8,7 @@ namespace AudioTextGeneration.src.main.Controllers
     public class AudioController : Controller
     {
         private readonly string _audioContainerName = "audios";
+        private readonly string _textContainerName = "texts";
         private TranscriptionService _transcriptionService;
         private StorageService _storageService;
 
@@ -37,7 +38,11 @@ namespace AudioTextGeneration.src.main.Controllers
             
 
             var textStream = new MemoryStream();
+
             await _transcriptionService.TranscribeFromBlob(_audioContainerName, audioFile.FileName, textStream);
+
+            // store the text file in blob storage
+            await _storageService.Store(_textContainerName, audioFile.FileName.Replace(".wav", ".txt"), textStream);
             return File(textStream, "text/plain", audioFile.FileName.Replace(".wav", ".txt"));
 
         }

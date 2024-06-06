@@ -6,7 +6,6 @@ namespace AudioTextGeneration.src.main.Services
 {
     public class TranscriptionService
     {
-        private readonly string _textContainerName = "texts";
         static string azureKey = "68b2fe0f646e47408eb9589123254428";
         static string azureLocation = "eastus2";
 
@@ -17,7 +16,7 @@ namespace AudioTextGeneration.src.main.Services
             _storageService = storageService;
         }
 
-        // Transcribes audio file from blob with name blobName in container containerName
+        // Transcribes audio file from blob with name blobName in container containerName, into the memorystream
         public async Task TranscribeFromBlob(string containerName, string blobName, MemoryStream outputTextStream) 
         {
             var audioStream = new MemoryStream();
@@ -37,9 +36,6 @@ namespace AudioTextGeneration.src.main.Services
             System.Console.WriteLine($"Transcription done in {elapsedMs} ms");
 
             System.Console.WriteLine("text stream length in bytes: " + outputTextStream.Length);
-
-            // store the text file in blob storage
-            await _storageService.Store(_textContainerName, blobName.Replace(".wav", ".txt"), outputTextStream);
             
             audioStream.Close();
         }
